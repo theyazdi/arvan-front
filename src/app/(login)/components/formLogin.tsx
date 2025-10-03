@@ -17,7 +17,11 @@ const schema = z.object({
   password: z.string().min(2),
 });
 
-function FormLogin() {
+interface FormLoginProps {
+  onMobileLogin?: () => void;
+}
+
+function FormLogin({ onMobileLogin }: FormLoginProps) {
   const router = useRouter();
   const { setIsLoggedIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -83,14 +87,30 @@ function FormLogin() {
           type="password"
         />
       </div>
-      <div className="flex justify-end items-center mt-auto">
+      <div className="flex flex-col gap-2 mt-auto">
+        <div className="flex justify-end items-center">
+          <Button 
+            size="sm" 
+            className="px-6 sm:px-10 py-2 sm:py-3 text-sm sm:text-base" 
+            type="submit"
+            disabled={isLoading}
+          >
+            {isLoading ? "در حال ورود..." : "ورود"}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 mt-2">
+          <hr className="w-full border-gray-300" />
+          <span className="text-xs text-gray-500 px-2">یا</span>
+          <hr className="w-full border-gray-300" />
+        </div>
         <Button 
+          variant="outline"
           size="sm" 
-          className="px-6 sm:px-10 py-2 sm:py-3 text-sm sm:text-base" 
-          type="submit"
-          disabled={isLoading}
+          className="px-6 sm:px-10 py-2 sm:py-3 text-sm sm:text-base bg-[#f9fafb]"
+          type="button"
+          onClick={onMobileLogin}
         >
-          {isLoading ? "در حال ورود..." : "ورود"}
+          ورود با شماره موبایل
         </Button>
       </div>
     </form>

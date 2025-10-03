@@ -24,7 +24,12 @@ export function AuthProvider({ children, token, refreshToken }: AuthProviderProp
 
   useEffect(() => {
     const getCurrentUser = async () => {
-      if (!token) return;
+      // Check both server-side token and localStorage token
+      const serverToken = token;
+      const localToken = typeof window !== 'undefined' ? localStorage.getItem('arvan_access') : null;
+      const currentToken = serverToken || localToken;
+      
+      if (!currentToken) return;
 
       try {
         const controller = new AbortController();
@@ -35,7 +40,7 @@ export function AuthProvider({ children, token, refreshToken }: AuthProviderProp
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ token }),
+          body: JSON.stringify({ token: currentToken }),
           signal: controller.signal,
         });
 
@@ -45,17 +50,31 @@ export function AuthProvider({ children, token, refreshToken }: AuthProviderProp
           setIsLoggedIn(true);
         } else {
           setIsLoggedIn(false);
+          // Clear invalid tokens
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('arvan_access');
+            localStorage.removeItem('arvan_refresh');
+          }
         }
       } catch (error) {
         setIsLoggedIn(false);
+        // Clear invalid tokens on error
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('arvan_access');
+          localStorage.removeItem('arvan_refresh');
+        }
       }
     };
 
     getCurrentUser();
   }, [token]);
 
+  // Get current token from localStorage if available
+  const currentToken = token || (typeof window !== 'undefined' ? localStorage.getItem('arvan_access') : null);
+  const currentRefreshToken = refreshToken || (typeof window !== 'undefined' ? localStorage.getItem('arvan_refresh') : null);
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, token, refreshToken }}>
+    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, token: currentToken, refreshToken: currentRefreshToken }}>
       {children}
     </AuthContext.Provider>
   );

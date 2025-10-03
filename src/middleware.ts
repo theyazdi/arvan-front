@@ -10,14 +10,9 @@ export function middleware(request: NextRequest) {
       targetUrl.pathname = "/dashboard";
       return NextResponse.redirect(targetUrl);
     }
-  } else {
-    // If user doesn't have token and tries to access protected routes, redirect to login
-    if (request.nextUrl.pathname.startsWith("/dashboard")) {
-      const targetUrl = new URL(request.url);
-      targetUrl.pathname = "/login";
-      return NextResponse.redirect(targetUrl);
-    }
   }
+  // Note: We're not redirecting to login for dashboard access
+  // Let the client-side AuthProvider handle localStorage-based authentication
 
   return NextResponse.next();
 }

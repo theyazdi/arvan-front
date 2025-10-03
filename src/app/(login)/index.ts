@@ -10,3 +10,6 @@ export * from "./components/signupUserInfo";
 export * from "./components/signupProgressBar";
 export * from "./components/signupWizardLayout";
 export * from "./components/signupPassword";
+export * from "./components/mobileLoginForm";
+export * from "./components/otpVerification";
+export * from "./actions/mobileAuth";

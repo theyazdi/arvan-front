@@ -9,7 +9,7 @@ interface CreateAccountProps {
 function CreateAccount({ onClick }: CreateAccountProps) {
   return (
     <div className="flex flex-col w-full">
-      <SocialLoginButtons />
+      {/* <SocialLoginButtons /> */}
       <div className="flex items-center gap-2 my-4">
         <hr className="w-full border-gray-300" />
         <span className="text-xs text-gray-500">OR</span>
