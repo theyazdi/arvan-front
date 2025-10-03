@@ -17,12 +17,19 @@ function FlightContent({ token }: { token: string }) {
   const getFlightOrder = async () => {
     try {
       setIsLoading(true);
+      // Get auth token from localStorage or use passed token
+      const authToken = typeof window !== 'undefined' ? localStorage.getItem('arvan_access') : token;
+      
+      if (!authToken) {
+        throw new Error("Authentication token not found");
+      }
+
       const response = await fetch(
         `${API_BASE_URL}/panel/order/?order_type=1`,
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${authToken}`,
           },
         }
       );

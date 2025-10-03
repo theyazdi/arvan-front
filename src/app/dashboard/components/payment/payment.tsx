@@ -2,28 +2,52 @@
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "@/lib/fetch";
 import { Button } from "@/components/ui/button";
+import { getAuthToken } from "@/lib/authToken";
 
 interface Payment {
-  amount: number;
+  invoice_id: string;
   created_at: string;
-  id: number;
-  tracking_code: string;
-  status: number;
-  order_type: number;
-  number_of_travelers: number;
+  order_type: string;
+  amount: number;
+  status: string;
+  travelers: string[];
 }
 
 function Payment({ token }: { token: string }) {
   const [paymentList, setPaymentList] = useState<Payment[]>([]);
+  const [error, setError] = useState<string>("");
+  
   const getPayment = async () => {
-    const response = await fetch(`${API_BASE_URL}/panel/payment/`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await response.json();
-    setPaymentList(data);
+    try {
+      // Get auth token from localStorage or use passed token
+      const authToken = getAuthToken() || token;
+      
+      if (!authToken) {
+        setError("توکن احراز هویت یافت نشد");
+        return;
+      }
+      
+      const cleanToken = authToken.trim();
+      const response = await fetch(`${API_BASE_URL}/payment/history`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cleanToken}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(`خطا در دریافت اطلاعات: ${errorData.detail || response.statusText}`);
+        return;
+      }
+      
+      const data = await response.json();
+      setPaymentList(data);
+      setError("");
+    } catch (err) {
+      setError("خطا در ارتباط با سرور");
+      console.error("Payment fetch error:", err);
+    }
   };
   useEffect(() => {
     getPayment();
@@ -31,6 +55,11 @@ function Payment({ token }: { token: string }) {
   return (
     <div className="mt-14">
       <h2 className="text-3xl font-medium">لیست پرداختی ها</h2>
+      {error && (
+        <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
       <div className="mt-8 bg-white rounded-lg p-4">
         <div className="overflow-x-auto mt-14 border border-dashed rounded-xl">
           <table className="min-w-full bg-white">
@@ -63,7 +92,7 @@ function Payment({ token }: { token: string }) {
                     <td colSpan={7} className="py-2 pl-6">
                       <div className="bg-gray-50 rounded-xl px-6 py-4 mt-2 flex flex-wrap items-center gap-y-2 ">
                         <div className="min-w-[138px] text-sm">
-                          {payment.tracking_code}
+                          {payment.invoice_id}
                         </div>
                         <div className="min-w-[170px] text-sm ">
                           {new Date(payment.created_at).toLocaleDateString(
@@ -71,26 +100,29 @@ function Payment({ token }: { token: string }) {
                           )}
                         </div>
                         <div className="min-w-[150Px] text-sm">
-                          {payment.order_type === 1 ? "هواپیما" : "هتل"}
+                          {payment.order_type === "flight" ? "هواپیما" : "هتل"}
                         </div>
                         <div className="min-w-[170px] text-sm">
                           {Number(payment.amount).toLocaleString()} تومان
                         </div>
                         <div className="min-w-[200px] text-sm text-center">
-                          {payment.number_of_travelers} نفر
+                          <div>{payment.travelers.length} نفر</div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            {payment.travelers.join("، ")}
+                          </div>
                         </div>
                         <div
                           className={`min-w-[150px] text-sm font-medium text-center ${
-                            payment.status.toString() === "2"
+                            payment.status === "verified"
                               ? "text-green-600"
-                              : payment.status.toString() === "3"
+                              : payment.status === "cancelled"
                               ? "text-red-600"
                               : "text-yellow-500"
                           }`}
                         >
-                          {payment.status === 2
+                          {payment.status === "verified"
                             ? "خریداری شده"
-                            : payment.status === 3
+                            : payment.status === "cancelled"
                             ? "لغو شده"
                             : "درحال پرداخت"}
                         </div>

@@ -16,6 +16,7 @@ import { useCallback, useState } from "react";
 import { useAuth } from "@/app/(auth)/authProvider";
 import { postRefId } from "@/lib/postrefid";
 import { API_BASE_URL } from "@/lib";
+import { redirectToPaymentGateway } from "@/lib/paymentGateway";
 
 interface PaymentLayoutMobileProps {
   flightItinerary: FlightSegment[];
@@ -123,13 +124,20 @@ function PaymentLayoutMobile({
             );
 
             try {
+              // Get auth token from localStorage or use passed token
+              const authToken = typeof window !== 'undefined' ? localStorage.getItem('arvan_access') : token;
+              
+              if (!authToken) {
+                throw new Error("Authentication token not found");
+              }
+
               const response = await fetch(
                 `${API_BASE_URL}/flight/order-create/`,
                 {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${authToken}`,
                   },
                   body: JSON.stringify({
                     AirItinerary: airItinerary,
@@ -140,6 +148,14 @@ function PaymentLayoutMobile({
 
               const responseData = await response.json();
               setGatewayToken(responseData);
+              
+              // Redirect to payment gateway
+              if (responseData.payment && responseData.payment.gateway_url) {
+                const refId = responseData.payment.gateway_url.split('RefId=')[1];
+                if (refId) {
+                  redirectToPaymentGateway(refId);
+                }
+              }
             } catch (error) {
               console.error("خطا در ارسال درخواست:", error);
             }

@@ -14,6 +14,7 @@ import { AirItinerary, FlightSegment } from "../page";
 import { useAuth } from "@/app/(auth)";
 import { API_BASE_URL } from "@/lib/fetch";
 import { postRefId } from "@/lib/postrefid";
+import { redirectToPaymentGateway } from "@/lib/paymentGateway";
 
 interface PaymentLayoutProps {
   flightItinerary: FlightSegment[];
@@ -183,13 +184,20 @@ function PaymentLayout({
             );
 
             try {
+              // Get auth token from localStorage or use passed token
+              const authToken = typeof window !== 'undefined' ? localStorage.getItem('arvan_access') : token;
+              
+              if (!authToken) {
+                throw new Error("Authentication token not found");
+              }
+
               const response = await fetch(
                 `${API_BASE_URL}/flight/order-create/`,
                 {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${authToken}`,
                   },
                   body: JSON.stringify({
                     AirItinerary: airItinerary,
@@ -200,7 +208,17 @@ function PaymentLayout({
 
               const responseData = await response.json();
               setGatewayToken(responseData);
-            } catch (error) {}
+              
+              // Redirect to payment gateway
+              if (responseData.payment && responseData.payment.gateway_url) {
+                const refId = responseData.payment.gateway_url.split('RefId=')[1];
+                if (refId) {
+                  redirectToPaymentGateway(refId);
+                }
+              }
+            } catch (error) {
+              console.error("Payment order creation failed:", error);
+            }
           }
 
           setStepData("passengers", passengers);

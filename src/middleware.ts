@@ -3,6 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("arvan_access")?.value;
 
+  // Handle payment callback POST requests
+  if (request.method === "POST" && request.nextUrl.pathname === "/paymentresult") {
+    const targetUrl = new URL(request.url);
+    targetUrl.pathname = "/paymentresult/api/callback";
+    return NextResponse.rewrite(targetUrl);
+  }
+
   // If user has token and tries to access login page, redirect to dashboard
   if (token) {
     if (request.nextUrl.pathname === "/login") {
@@ -18,5 +25,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login/:path*", "/dashboard/:path*"],
+  matcher: ["/login/:path*", "/dashboard/:path*", "/paymentresult"],
 };

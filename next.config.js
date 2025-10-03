@@ -13,6 +13,12 @@ const nextConfig = {
       },
     ],
   },
+  // Allow external origins for payment gateway
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['asan.shaparak.ir', 'localhost:3000'],
+    },
+  },
 };
 
 module.exports = nextConfig;
